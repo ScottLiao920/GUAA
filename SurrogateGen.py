@@ -19,7 +19,7 @@ import utils
 import trainVictims
 
 warnings.filterwarnings("ignore", category=UserWarning)
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"#, 1, 2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # , 1, 2"
 
 
 parser = argparse.ArgumentParser()
@@ -39,13 +39,14 @@ elif args.datasetName == 'DD':
 elif args.datasetName == 'COLLAB':
     numNodes = 100
 else:
-    raise NotImplementedError("Only PROTEINS, IMDB-Binary, DD and COLLAB dataset supported!")
+    raise NotImplementedError(
+        "Only PROTEINS, IMDB-Binary, DD and COLLAB dataset supported!")
 
 if not args.trained:
     print("\n\n\ntraining victim model first...\n\n\n")
     trainVictims.train(args.datasetName)
 
-victimModel = utils.loadModel(args.datasetName) # TODO
+victimModel = utils.loadModel(args.datasetName)  # TODO
 victimModel.eval()
 for param in victimModel.parameters():
     param.requires_grad = False
@@ -58,18 +59,19 @@ dataset = utils.getDataset('data', args.datasetName, None)
 for cur_class in range(dataset.num_classes):
     # update class impressions individually
     for idx in range(args.surDataperClass):
-        
+
         # create an random adjacency matrix for given nodes & labels
         num_nodes = random.randint(1, numNodes)
         sample = geo.data.Batch()
 
         if args.datasetName not in ['COLLAB', 'IMDBB']:
             # not using node degree as node feature
-            adv_adj = torch.zeros(size=(num_nodes, num_nodes), device=args.device).bool()
+            adv_adj = torch.zeros(
+                size=(num_nodes, num_nodes), device=args.device).bool()
             for i in range(num_nodes):
                 adv_adj[i, i:].random_(0, 2)
             adv_adj = adv_adj.int()
-            if adv_adj.sum().item() == 0: 
+            if adv_adj.sum().item() == 0:
                 idx -= 1
                 continue
             for i in range(num_nodes):
@@ -80,6 +82,7 @@ for cur_class in range(dataset.num_classes):
             sample.x.requires_grad_()
             cl_optim = torch.optim.Adam([sample.x], lr=0.1)
         else:
+            # node degree as node feature
             adv_adj = torch.ones(size=(num_nodes, num_nodes)).int()
             sample.edge_index = utils.adj2idx(adv_adj).long()
             sample.num_nodes = num_nodes
@@ -94,16 +97,17 @@ for cur_class in range(dataset.num_classes):
         cur_pred = victimModel(sample)
         cur_tar = random.uniform(0.55, 0.99)
         cnt = 0
-        while F.softmax(cur_pred)[:, cur_class].item() < cur_tar and cnt < args.maxStep: 
+        while F.softmax(cur_pred)[:, cur_class].item() < cur_tar and cnt < args.maxStep:
             cl_optim.zero_grad()
             cur_pred = victimModel(sample)
-            loss = F.nll_loss(cur_pred, torch.Tensor([cur_class]).long().to(args.device))
+            loss = F.nll_loss(cur_pred, torch.Tensor(
+                [cur_class]).long().to(args.device))
             loss.backward()
             cl_optim.step()
             if cnt % 500 == 0:
                 print(sample.x.grad.sum())
                 print('{} |　Epoch {} | Target Class {} | Current Logits for target class {}'.format(
-                    idx, cnt, cur_class, F.softmax(cur_pred)[0,cur_class].item()))
+                    idx, cnt, cur_class, F.softmax(cur_pred)[0, cur_class].item()))
             cnt += 1
             with torch.no_grad():
                 # TODO: modify the lower and upper limits for each dataset
@@ -112,4 +116,4 @@ for cur_class in range(dataset.num_classes):
             'data', args.datasetName, 'classImpression', str(cur_class), '{}.pt'.format(idx))
         )
         print('Epoch {} | Target Class {} | Current Logits for target class {}'.format(
-                    cnt, cur_class, F.softmax(cur_pred)[0,cur_class].item()))
+            cnt, cur_class, F.softmax(cur_pred)[0, cur_class].item()))

@@ -89,3 +89,10 @@ def BatchAppend(ori_graphs, trigger, pos_mode='deg'):
 #     modi_graphs = geo.data.Batch.from_data_list(modi_graphs).to(args.device)
     modi_graphs = batch_from_list(modi_graphs)
     return modi_graphs
+
+
+def loadModel(datasetName):
+    if datasetName == 'PROTEINS':
+        modelDir = os.path.join(os.cur_dir, 'models', 'PROTEINS', '220.pth')
+        model = torch.load(modelDir)
+    return model
