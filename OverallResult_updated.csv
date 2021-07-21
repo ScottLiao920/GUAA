@@ -1,0 +1,29 @@
+,trigger_idx,accu,timeCost
+graphEmbeddingResult deg,106,0.5803571428571429,638.0679697990417
+graphEmbeddingResult min,82,0.5714285714285714,638.3593089580536
+graphEmbeddingResult btw,91,0.7053571428571429,1462.6216337680817
+graphEmbeddingResult eig,82,0.5714285714285714,859.8525733947754
+nodeEmbeddingResult length: 1 mode: deg,[82],0.5714285714285714,26.204448223114014
+nodeEmbeddingResult length: 1 mode: min,[80],0.7142857142857143,26.095378160476685
+nodeEmbeddingResult length: 1 mode: btw,[82],0.6160714285714286,35.91714525222778
+nodeEmbeddingResult length: 1 mode: eig,[80],0.7410714285714286,27.93085765838623
+nodeEmbeddingResult length: 2 mode: deg,"[82, 82]",0.6339285714285714,31.269752502441406
+nodeEmbeddingResult length: 2 mode: min,"[82, 80]",0.7321428571428571,32.05509853363037
+nodeEmbeddingResult length: 2 mode: btw,"[80, 80]",0.6964285714285714,40.782365560531616
+nodeEmbeddingResult length: 2 mode: eig,"[82, 82]",0.6517857142857143,34.32508659362793
+nodeEmbeddingResult length: 3 mode: deg,"[80, 80, 80]",0.75,35.05792713165283
+nodeEmbeddingResult length: 3 mode: min,"[82, 82, 82]",0.48214285714285715,36.3398277759552
+nodeEmbeddingResult length: 3 mode: btw,"[80, 80, 80]",0.7321428571428571,44.15145707130432
+nodeEmbeddingResult length: 3 mode: eig,"[82, 82, 82]",0.625,38.27803564071655
+nodeEmbeddingResult_ClsImprs length: 1 mode: deg,[82],0.5714285714285714,992.6306567192078
+nodeEmbeddingResult_ClsImprs length: 1 mode: min,[106],0.5357142857142857,946.7149651050568
+nodeEmbeddingResult_ClsImprs length: 1 mode: btw,[80],0.7410714285714286,938.4616959095001
+nodeEmbeddingResult_ClsImprs length: 1 mode: eig,[106],0.5892857142857143,938.4162719249725
+nodeEmbeddingResult_ClsImprs length: 2 mode: deg,"[106, 106]",0.5178571428571429,936.9213075637817
+nodeEmbeddingResult_ClsImprs length: 2 mode: min,"[106, 106]",0.5535714285714286,936.5684282779694
+nodeEmbeddingResult_ClsImprs length: 2 mode: btw,"[106, 106]",0.5714285714285714,937.3475587368011
+nodeEmbeddingResult_ClsImprs length: 2 mode: eig,"[106, 106]",0.5357142857142857,934.8087739944458
+nodeEmbeddingResult_ClsImprs length: 3 mode: deg,"[106, 106, 106]",0.5803571428571429,955.478107213974
+nodeEmbeddingResult_ClsImprs length: 3 mode: min,"[106, 106, 106]",0.4732142857142857,954.6713514328003
+nodeEmbeddingResult_ClsImprs length: 3 mode: btw,"[106, 106, 106]",0.5892857142857143,954.6159300804138
+nodeEmbeddingResult_ClsImprs length: 3 mode: eig,"[82, 106, 82]",0.6428571428571429,957.419516324997
