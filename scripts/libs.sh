@@ -10,6 +10,10 @@ pip install torch-geometric
 # for unsupervised graph transformer
 apt-get update
 apt-get install make
+pip install Cython
 cd ..
-cd GUAA/Downloads/Graph-Transformer-master/U2GNN_pytorch/log_uniform
+cd GUAA/Graph-Transformer-PyTorch/log_uniform
+python setup.py install
+
+cd /GUAA
 python setup.py install
