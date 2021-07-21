@@ -27,6 +27,32 @@ def adj2idx(edge_index):
                 tmp.append([i, j])
     return torch.Tensor(tmp).permute(1,0).to(edge_index.device)
 
+def batch_from_list(dataList):
+    # generate a batched data from a list of geometric data
+    # using this since wrong number of batch for surrogate data
+    outp = geo.data.Batch()
+    data = dataList[0]
+    keys = data.keys
+    keys.append('batch')
+    batchedData = {key: [] for key in keys}
+    cnt = 0
+    prev_nodes = 0
+    for data in dataList:
+        for key in data.keys:
+            if key == 'edge_index':
+                data[key] += prev_nodes
+            batchedData[key].append(data[key])
+        batchedData['batch'].append(torch.ones((data.x.shape[0], ), dtype=torch.int64) * cnt)
+        prev_nodes += data.x.shape[0]
+        cnt += 1
+    for key in keys:
+        if key == 'edge_index':
+            catDim = -1
+        else:
+            catDim = 0
+        outp[key] = torch.cat(batchedData[key], dim=catDim)
+    return outp
+
 def append(ori_graph, appendix, anchor_pos):
     # function to append a group of nodes to original graph
     idx_anchor = (ori_graph.edge_index[0] > anchor_pos).int().argmin() + 1
