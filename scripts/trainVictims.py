@@ -17,7 +17,7 @@ import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import random_split
 
-from models import Model
+from modules.models import Model
 
 warnings.filterwarnings("ignore", category=UserWarning)
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # , 1, 2"
@@ -36,9 +36,12 @@ def train(datasetName='IMDBB'):
             "Only IMDB-Binary, DD, COLLAB and PROTEINS dataset supported!")
 
     if datasetName == 'PROTEINS':
-        runCommand = 'python HGP-SL-train.py'
+        runCommand = '; '.join([
+            'cd modules'
+            'python HGP-SL-train.py'
+        ])
     elif datasetName == 'IMDBB':
-        tmpCommand = ['cd Downloads/Graph-Transformer-master/U2GNN_pytorch',
+        tmpCommand = ['cd Graph-Transformer-PyTorch',
                       '''
         python train_pytorch_U2GNN_UnSup.py \
             --dataset IMDBBINARY \
@@ -54,8 +57,8 @@ def train(datasetName='IMDBB'):
                       ]
         runCommand = '; '.join(tmpCommand)
     elif datasetName == 'DD':
-        tmpCommand = ['cd Downloads/Graph-Transformer-master/U2GNN_pytorch',
-                        '''
+        tmpCommand = ['cd Graph-Transformer-PyTorch',
+                      '''
         python train_pytorch_U2GNN_UnSup.py \
             --dataset DD \
             --batch_size 4 \
@@ -70,8 +73,8 @@ def train(datasetName='IMDBB'):
                       ]
         runCommand = '; '.join(tmpCommand)
     elif datasetName == 'COLLAB':
-        tmpCommand = ['cd Downloads/Graph-Transformer-master/U2GNN_pytorch',
-                        '''
+        tmpCommand = ['cd Graph-Transformer-PyTorch',
+                      '''
         python train_pytorch_U2GNN_UnSup.py \
             --dataset COLLAB \
             --batch_size 4 \

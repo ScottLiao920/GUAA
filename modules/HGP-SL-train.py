@@ -88,7 +88,8 @@ def train():
               'acc_val: {:.6f}'.format(acc_val), 'time: {:.6f}s'.format(time.time() - t))
 
         val_loss_values.append(loss_val)
-        torch.save(model.state_dict(), '{}.pth'.format(epoch))
+        outpDir = os.path.join('/GUAA', 'models', args.dataset, '{}.pth'.format(epoch))
+        torch.save(model, outpDir)
         if val_loss_values[-1] < min_loss:
             min_loss = val_loss_values[-1]
             best_epoch = epoch

@@ -9,13 +9,14 @@ import warnings
 
 import scipy.io as sio
 import torch
+from torch._C import device
 import torch.nn as nn
 import torch.nn.functional as F
 import torch_geometric as geo
 from torch.utils.data import random_split
 
-from models import Model
-import utils
+from modules.models import Model
+import modules.utils as utils
 import trainVictims
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -27,26 +28,26 @@ parser.add_argument('--datasetName', type=str, default='IMDBB')
 parser.add_argument('--surDataperClass', type=int, default=500)
 parser.add_argument('--maxStep', type=int, default=5000)
 parser.add_argument('--trained', type=bool, default=False)
+parser.add_argument('--device', type=str, default="CUDA:0")
 args = parser.parse_args()
 
-# TODO: modify the average number of nodes in each dataset
-if args.datasetName == 'PROTEINS':
-    numNodes = 600
-elif args.datasetName == 'IMDBB':
-    numNodes = 40
-elif args.datasetName == 'DD':
-    numNodes = 80
-elif args.datasetName == 'COLLAB':
-    numNodes = 100
+if torch.cuda.is_available() and args.device == 'CUDA:0':
+    args.device = 'CUDA:0'
 else:
+    args.device = 'CPU'
+print("Performing calculations on {}".format(args.device))
+
+if args.datasetName not in ['PROTEINS', 'IMDBB', 'DD', 'COLLAB']:
     raise NotImplementedError(
         "Only PROTEINS, IMDB-Binary, DD and COLLAB dataset supported!")
+numNodes = 600
 
 if not args.trained:
     print("\n\n\ntraining victim model first...\n\n\n")
     trainVictims.train(args.datasetName)
 
-victimModel = utils.loadModel(args.datasetName)  # TODO
+# TODO: make it returns a torch model
+victimModel = utils.loadModel(args.datasetName).to(args.device)
 victimModel.eval()
 for param in victimModel.parameters():
     param.requires_grad = False
@@ -56,6 +57,7 @@ dataset = utils.getDataset('data', args.datasetName, None)
 
 # surrogate data generation
 # for every class, generate certain amount of class imporessions
+# TODO: add weighted graph generation algorithms for PROTEINS & DD? 
 for cur_class in range(dataset.num_classes):
     # update class impressions individually
     for idx in range(args.surDataperClass):
@@ -64,24 +66,27 @@ for cur_class in range(dataset.num_classes):
         num_nodes = random.randint(1, numNodes)
         sample = geo.data.Batch()
 
-        if args.datasetName not in ['COLLAB', 'IMDBB']:
+        # TODO: modify for every dataset
+        if args.datasetName in ['PROTEINS', 'DD']:
             # not using node degree as node feature
             adv_adj = torch.zeros(
-                size=(num_nodes, num_nodes), device=args.device).bool()
+                size=(num_nodes, num_nodes),
+                device=args.device).bool()  # create empty adjancency matrix
             for i in range(num_nodes):
-                adv_adj[i, i:].random_(0, 2)
+                adv_adj[i, i:].random_(0, 2)  # randomly fill it
             adv_adj = adv_adj.int()
             if adv_adj.sum().item() == 0:
                 idx -= 1
-                continue
+                continue  # if accidentally created an graph without edges, redo
             for i in range(num_nodes):
                 for j in range(i, num_nodes):
-                    adv_adj[j, i] = adv_adj[i, j]
+                    adv_adj[j, i] = adv_adj[i, j]  # make it symmetric
             sample.edge_index = utils.adj2idx(adv_adj).long()
-            sample.x = utils.getNodes(num_nodes)
+            sample.x = utils.getNodes(
+                num_nodes, args.datasetName).to(args.device)  # TODO: Potential Bug
             sample.x.requires_grad_()
             cl_optim = torch.optim.Adam([sample.x], lr=0.1)
-        else:
+        elif args.datasetName in ['COLLAB', 'IMDBB']:
             # node degree as node feature
             adv_adj = torch.ones(size=(num_nodes, num_nodes)).int()
             sample.edge_index = utils.adj2idx(adv_adj).long()
@@ -105,13 +110,23 @@ for cur_class in range(dataset.num_classes):
             loss.backward()
             cl_optim.step()
             if cnt % 500 == 0:
-                print(sample.x.grad.sum())
+                if args.datasetName in ['PROTEINS', 'DD']:
+                    print(sample.x.grad.sum())
+                else:
+                    print(sample.edge_attr.grad.sum())
                 print('{} |　Epoch {} | Target Class {} | Current Logits for target class {}'.format(
                     idx, cnt, cur_class, F.softmax(cur_pred)[0, cur_class].item()))
             cnt += 1
             with torch.no_grad():
-                # TODO: modify the lower and upper limits for each dataset
-                sample.x.clamp_(-500, 600)
+                # TODO: modify the lower and upper limits for biochemistry dataset
+                if args.datasetName == 'PROTEINS':
+                    sample.x.clamp_(-500, 600)
+                elif args.datasetName == 'DD':
+                    # for DD dataset, performs an inplace softmax operation to get it within 0 to 1
+                    torch.exp(sample.x, out=sample.x)
+                    summed = torch.sum(sample.x, dim=1, keepdim=True)
+                    sample.x /= summed
+        # TODO: modify generated surrogate data to one-hot or keep them in softmax-ed manner?
         torch.save(sample, os.path.join(
             'data', args.datasetName, 'classImpression', str(cur_class), '{}.pt'.format(idx))
         )

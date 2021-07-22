@@ -3,6 +3,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch_geometric.nn import models
 torch.manual_seed(123)
 
 import numpy as np
@@ -221,7 +222,7 @@ for epoch in range(1, args.num_epochs + 1):
         try:
             os.remove(os.path.join('/GUAA', 'models', args.dataset, str(best_epoch)+'.pt'))
         except FileNotFoundError:
-            torch.save(model.state_dict(), os.path.join('/GUAA', 'models', args.dataset, str(epoch)+'.pt'))
+            torch.save(model, os.path.join('/GUAA', 'models', args.dataset, str(epoch)+'.pt'))
     else:
         es_cnt += 1
     if es_cnt == 15:
