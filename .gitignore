@@ -12,4 +12,5 @@
 /build
 /__pycache__
 /.empty
-/dist
+*.egg
+*/__pycache__

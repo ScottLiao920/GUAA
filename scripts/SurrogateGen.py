@@ -48,7 +48,7 @@ if not args.trained:
     print("\n\n\ntraining victim model first...\n\n\n")
     trainVictims.train(args.datasetName)
 
-# TODO: make it returns a torch model (Done)
+# TODO: make it returns a torch model (Done )
 victimModel = utils.loadModel(args.datasetName).to(args.device)
 victimModel.eval()
 for param in victimModel.parameters():
