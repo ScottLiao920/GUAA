@@ -37,7 +37,7 @@ def load_data(dataset, degree_as_tag):
     label_dict = {}
     feat_dict = {}
 
-    with open('./dataset/%s/%s.txt' % (dataset, dataset), 'r') as f:
+    with open('/GUAA/data/GraphTransformer/dataset/%s/%s.txt' % (dataset, dataset), 'r') as f:
         n_g = int(f.readline().strip())
         for i in range(n_g):
             row = f.readline().strip().split()

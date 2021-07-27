@@ -24,7 +24,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # , 1, 2"
 os.environ['MKL_THREADING_LAYER'] = 'GNU'
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', type=str, default='IMDBB')
+parser.add_argument('--datasetName', type=str, default='IMDBB')
 
 
 def train(datasetName='IMDBB'):
@@ -41,7 +41,7 @@ def train(datasetName='IMDBB'):
             'python HGP-SL-train.py'
         ])
     elif datasetName == 'IMDBB':
-        tmpCommand = ['cd Graph-Transformer-PyTorch',
+        tmpCommand = ['cd GraphTransformerPyTorch',
                       '''
         python train_pytorch_U2GNN_UnSup.py \
             --dataset IMDBBINARY \
@@ -57,7 +57,7 @@ def train(datasetName='IMDBB'):
                       ]
         runCommand = '; '.join(tmpCommand)
     elif datasetName == 'DD':
-        tmpCommand = ['cd Graph-Transformer-PyTorch',
+        tmpCommand = ['cd GraphTransformerPyTorch',
                       '''
         python train_pytorch_U2GNN_UnSup.py \
             --dataset DD \
@@ -73,7 +73,7 @@ def train(datasetName='IMDBB'):
                       ]
         runCommand = '; '.join(tmpCommand)
     elif datasetName == 'COLLAB':
-        tmpCommand = ['cd Graph-Transformer-PyTorch',
+        tmpCommand = ['cd GraphTransformerPyTorch',
                       '''
         python train_pytorch_U2GNN_UnSup.py \
             --dataset COLLAB \
@@ -98,5 +98,5 @@ def train(datasetName='IMDBB'):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    datasetName = args.dataset.upper()
+    datasetName = args.datasetName.upper()
     train(datasetName)

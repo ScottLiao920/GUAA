@@ -8,3 +8,8 @@
 /Downloads
 *.zip
 /papers read
+/*.egg-info
+/build
+/__pycache__
+/.empty
+/dist

@@ -12,7 +12,7 @@ apt-get update
 apt-get install make
 pip install Cython
 cd ..
-cd GUAA/Graph-Transformer-PyTorch/log_uniform
+cd GUAA/GraphTransformerPyTorch/log_uniform
 python setup.py install
 
 cd /GUAA

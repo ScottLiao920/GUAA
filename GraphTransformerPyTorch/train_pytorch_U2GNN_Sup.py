@@ -3,7 +3,7 @@ import os
 from util import *
 from scipy.sparse import coo_matrix
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from pytorch_U2GNN_Sup import *
+from GraphTransformerPyTorch.pytorch_U2GNN_Sup import *
 import time
 import numpy as np
 import math

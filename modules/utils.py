@@ -1,7 +1,11 @@
 import os
+import pickle
+
+import networkx
 import torch
 import torch_geometric as geo
-import networkx
+from GraphTransformerPyTorch.pytorch_U2GNN_UnSup import *
+from torch.nn.modules.transformer import Transformer
 
 
 def getDataset(root, name, transform):
@@ -139,8 +143,17 @@ def BatchAppend(ori_graphs, trigger, pos_mode='deg'):
 
 
 def loadModel(datasetName):
-    modelDir = os.path.join('/GUAA', 'models', datasetName, 'model.pth')
-    model = torch.load(modelDir)
+    # unsupervised graph transformer models includes Cython modules, unpickle-able
+    # Load model class for unsupervised graph transformer models first then load state dict
+    if datasetName == 'PROTEINS':
+        modelDir = os.path.join('/GUAA', 'models', datasetName, 'model.pth')
+        model = torch.load(modelDir)
+    else:
+        with open(os.path.join(
+                '/GUAA', 'models', datasetName, 'modelArguments.pickle'), 'rb') as handle:
+            modelArguments = pickle.load(handle)
+        model = TransformerU2GNN(**modelArguments)
+        model.load_state_dict(torch.load(os.path.join('/GUAA', 'models', datasetName, 'model.pth')))
     return model
 
 
@@ -152,5 +165,13 @@ def getNodes(numNodes, datasetName):
                         dim=1)
     else:
         # DD dataset, one-hot tensor of 89 labels
-        tmp = torch.nn.functional.one_hot(torch.randint(0, 89, (numNodes, )), num_classes=89)
+        tmp = torch.nn.functional.one_hot(
+            torch.randint(0, 89, (numNodes, )), num_classes=89)
     return tmp.float().clone()
+
+# function to transfer a torch geometric dataset to graph transformer readable data
+# TODO
+def geo2S2V(graph, datasetName):
+    # desired format: str(nodeLabel, numNeighbors, [neibor index])
+    if datasetName in ['IMDBBINARY', ]
+    pass

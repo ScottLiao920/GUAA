@@ -7,16 +7,17 @@ import random
 import time
 import warnings
 
+import GraphTransformerPyTorch
+import modules.utils as utils
 import scipy.io as sio
 import torch
-from torch._C import device
 import torch.nn as nn
 import torch.nn.functional as F
 import torch_geometric as geo
+from modules.models import Model
+from torch._C import device
 from torch.utils.data import random_split
 
-from modules.models import Model
-import modules.utils as utils
 import trainVictims
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -24,7 +25,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # , 1, 2"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--datasetName', type=str, default='IMDBB')
+parser.add_argument('--datasetName', type=str, default='IMDBBINARY')
+parser.add_argument('--surWeighted', type=bool, default=False)
 parser.add_argument('--surDataperClass', type=int, default=500)
 parser.add_argument('--maxStep', type=int, default=5000)
 parser.add_argument('--trained', type=bool, default=False)
@@ -32,12 +34,12 @@ parser.add_argument('--device', type=str, default="CUDA:0")
 args = parser.parse_args()
 
 if torch.cuda.is_available() and args.device == 'CUDA:0':
-    args.device = 'CUDA:0'
+    args.device = torch.device('cuda')
 else:
-    args.device = 'CPU'
+    args.device = torch.device('cpu')
 print("Performing calculations on {}".format(args.device))
 
-if args.datasetName not in ['PROTEINS', 'IMDBB', 'DD', 'COLLAB']:
+if args.datasetName not in ['PROTEINS', 'IMDBBINARY', 'DD', 'COLLAB']:
     raise NotImplementedError(
         "Only PROTEINS, IMDB-Binary, DD and COLLAB dataset supported!")
 numNodes = 600
@@ -46,19 +48,21 @@ if not args.trained:
     print("\n\n\ntraining victim model first...\n\n\n")
     trainVictims.train(args.datasetName)
 
-# TODO: make it returns a torch model
+# TODO: make it returns a torch model (Done)
 victimModel = utils.loadModel(args.datasetName).to(args.device)
 victimModel.eval()
 for param in victimModel.parameters():
     param.requires_grad = False
-    print(param.requires_grad)
 
-dataset = utils.getDataset('data', args.datasetName, None)
+if args.datasetName == 'COLLAB':
+    num_classes = 3
+else:
+    num_classes = 2
 
 # surrogate data generation
 # for every class, generate certain amount of class imporessions
-# TODO: add weighted graph generation algorithms for PROTEINS & DD? 
-for cur_class in range(dataset.num_classes):
+# TODO: add weighted graph generation algorithms for PROTEINS & DD?
+for cur_class in range(num_classes):
     # update class impressions individually
     for idx in range(args.surDataperClass):
 
@@ -67,7 +71,7 @@ for cur_class in range(dataset.num_classes):
         sample = geo.data.Batch()
 
         # TODO: modify for every dataset
-        if args.datasetName in ['PROTEINS', 'DD']:
+        if args.datasetName in ['PROTEINS', 'DD'] and not args.surWeighted:
             # not using node degree as node feature
             adv_adj = torch.zeros(
                 size=(num_nodes, num_nodes),
@@ -86,7 +90,7 @@ for cur_class in range(dataset.num_classes):
                 num_nodes, args.datasetName).to(args.device)  # TODO: Potential Bug
             sample.x.requires_grad_()
             cl_optim = torch.optim.Adam([sample.x], lr=0.1)
-        elif args.datasetName in ['COLLAB', 'IMDBB']:
+        elif args.datasetName in ['COLLAB', 'IMDBBINARY']:
             # node degree as node feature
             adv_adj = torch.ones(size=(num_nodes, num_nodes)).int()
             sample.edge_index = utils.adj2idx(adv_adj).long()
@@ -98,7 +102,9 @@ for cur_class in range(dataset.num_classes):
             bin_edge1 = sample.edge_index[1].masked_select(bin_attr)
             sample.x = bin_edge0.bincount().float()
             cl_optim = torch.optim.Adam([sample.edge_attr], lr=0.1)
-
+        else:
+            # pseudo-weighted graph generation
+            raise NotImplementedError
         cur_pred = victimModel(sample)
         cur_tar = random.uniform(0.55, 0.99)
         cnt = 0
