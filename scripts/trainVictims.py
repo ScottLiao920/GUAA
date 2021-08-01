@@ -17,7 +17,7 @@ import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import random_split
 
-from modules.models import Model
+from modules.models import HGPSL as Model
 
 warnings.filterwarnings("ignore", category=UserWarning)
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # , 1, 2"

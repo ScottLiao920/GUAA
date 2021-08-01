@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch_geometric as geo
-from modules.models import Model
+from modules.models import HGPSL as Model
 from torch._C import device
 from torch.utils.data import random_split
 
