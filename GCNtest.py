@@ -18,9 +18,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--datasetName', type=str, default='IMDBBINARY')
 args = parser.parse_args()
 
-
+transform = Indegree() if args.datasetName in ['IMDBBINARY', 'COLLAB'] else None
 dataset = TUDataset(root='data/GCN', name=args.datasetName,
-                    pre_transform=Indegree(), use_node_attr=True)
+                    pre_transform=transform, use_node_attr=True)
 torch.manual_seed(0)
 dataset = dataset.shuffle()
 

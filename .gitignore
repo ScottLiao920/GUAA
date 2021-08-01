@@ -15,3 +15,5 @@
 *.egg
 */__pycache__
 *.pyc
+GraphTransformerPyTorch/__pycache__/pytorch_U2GNN_UnSup.cpython-38.pyc
+GraphTransformerPyTorch/__pycache__/pytorch_U2GNN_UnSup.cpython-38.pyc
