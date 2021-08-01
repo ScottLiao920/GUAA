@@ -153,7 +153,8 @@ def loadModel(datasetName):
                 '/GUAA', 'models', datasetName, 'modelArguments.pickle'), 'rb') as handle:
             modelArguments = pickle.load(handle)
         model = TransformerU2GNN(**modelArguments)
-        model.load_state_dict(torch.load(os.path.join('/GUAA', 'models', datasetName, 'model.pth')))
+        model.load_state_dict(torch.load(os.path.join(
+            '/GUAA', 'models', datasetName, 'model.pth')))
     return model
 
 
@@ -171,24 +172,28 @@ def getNodes(numNodes, datasetName):
 
 # function to transfer a torch geometric dataset to graph transformer readable data
 # TODO
+
+
 def geo2S2V(graphs, datasetName):
-    # desired format: 
-    # numGraphs
-    # numNodes, graphLabel
-    # str(nodeLabel, numNeighbors, [neibor index])
-    # details in https://github.com/daiquocnguyen/Graph-Transformer/issues/1
+    '''
+    desired format: 
+    numGraphs
+    numNodes, graphLabel
+    str(nodeLabel, numNeighbors, [neibor index])
+    details in https://github.com/daiquocnguyen/Graph-Transformer/issues/1
+    '''
     # if datasetName in ['IMDBBINARY', 'COLLAB']:
     #     nodeLabel = 0
     # elif datasetName == 'DD':
-    #     nodeLabelDict = list(range(83)) # TODO: verify with U2GNN author with this number
+    #     nodeLabelDict = list(range(83)) \
     # elif datasetName == 'PROTEINS':
     #     nodeLabelDict = list(range(3))
     outString = []
     outString.append(str(len(graphs))+'\n')
     for graph in graphs:
         nxg = geo.utils.convert.to_networkx(graph)
-        outString.append(str(nxg.number_of_nodes()) \
-            + str(graph.y.item()) + '\n')
+        outString.append(str(nxg.number_of_nodes())
+                         + str(graph.y.item()) + '\n')
         for i in range(nxg.number_of_nodes()):
             try:
                 nodeLabel = graph.x[i].argmax().item()
