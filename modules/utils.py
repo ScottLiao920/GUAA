@@ -7,6 +7,7 @@ import torch_geometric as geo
 from GraphTransformerPyTorch.pytorch_U2GNN_UnSup import *
 from torch.nn.modules.transformer import Transformer
 from torch_geometric.utils import degree
+from modules.models import GCN
 
 
 def getDataset(root, name, transform):
@@ -145,17 +146,37 @@ def BatchAppend(ori_graphs, trigger, pos_mode='deg'):
 
 def loadModel(datasetName):
     # unsupervised graph transformer models includes Cython modules, unpickle-able
-    # Load model class for unsupervised graph transformer models first then load state dict
+    # Load model class for unsupervised graph transformer models first then load state
+
+    # if datasetName == 'PROTEINS':
+    #     modelDir = os.path.join('/GUAA', 'models', datasetName, 'model.pth')
+    #     model = torch.load(modelDir)
+    # else:
+    #     with open(os.path.join(
+    #             '/GUAA', 'models', datasetName, 'modelArguments.pickle'), 'rb') as handle:
+    #         modelArguments = pickle.load(handle)
+    #     model = TransformerU2GNN(**modelArguments)
+    #     model.load_state_dict(torch.load(os.path.join(
+    #         '/GUAA', 'models', datasetName, 'model.pth')))
+    # return model
+
+    # updates: all using GCN model
     if datasetName == 'PROTEINS':
-        modelDir = os.path.join('/GUAA', 'models', datasetName, 'model.pth')
-        model = torch.load(modelDir)
-    else:
-        with open(os.path.join(
-                '/GUAA', 'models', datasetName, 'modelArguments.pickle'), 'rb') as handle:
-            modelArguments = pickle.load(handle)
-        model = TransformerU2GNN(**modelArguments)
-        model.load_state_dict(torch.load(os.path.join(
-            '/GUAA', 'models', datasetName, 'model.pth')))
+        num_classes = 2
+        num_features = 3
+    elif datasetName == 'DD':
+        num_classes = 2
+        num_features = 89
+    elif datasetName == 'COLLAB':
+        num_classes = 3
+        num_features = 1
+    elif datasetName == 'IMDB-BINARY':
+        num_classes = 2
+        num_features = 1
+    model = GCN(num_features, num_classes)
+    model.load_state_dict(torch.load(os.path.join(
+        'models'. datasetName, 'model.pt'
+    )))
     return model
 
 
@@ -171,10 +192,8 @@ def getNodes(numNodes, datasetName):
             torch.randint(0, 89, (numNodes, )), num_classes=89)
     return tmp.float().clone()
 
+
 # function to transfer a torch geometric dataset to graph transformer readable data
-# TODO
-
-
 def geo2S2V(graphs, datasetName):
     '''
     desired format: 
@@ -209,6 +228,7 @@ def geo2S2V(graphs, datasetName):
             outString.append(' '.join(neighborIndex)+'\n')
     print(outString)
     pass
+
 
 class Indegree(object):
     r"""Adds the globally normalized node degree to the node features.

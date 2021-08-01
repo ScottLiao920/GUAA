@@ -124,7 +124,6 @@ for cur_class in range(num_classes):
                     idx, cnt, cur_class, F.softmax(cur_pred)[0, cur_class].item()))
             cnt += 1
             with torch.no_grad():
-                # TODO: modify the lower and upper limits for biochemistry dataset
                 if args.datasetName == 'PROTEINS':
                     sample.x.clamp_(-500, 600)
                 elif args.datasetName == 'DD':
