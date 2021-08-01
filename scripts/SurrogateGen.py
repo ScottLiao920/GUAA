@@ -69,6 +69,7 @@ for cur_class in range(num_classes):
         # create an random adjacency matrix for given nodes & labels
         num_nodes = random.randint(1, numNodes)
         sample = geo.data.Batch()
+        sample.num_nodes = num_nodes
 
         # TODO: modify for every dataset
         if args.datasetName in ['PROTEINS', 'DD'] and not args.surWeighted:
@@ -90,21 +91,28 @@ for cur_class in range(num_classes):
                 num_nodes, args.datasetName).to(args.device)  # TODO: Potential Bug
             sample.x.requires_grad_()
             cl_optim = torch.optim.Adam([sample.x], lr=0.1)
-        elif args.datasetName in ['COLLAB', 'IMDBBINARY']:
+        elif args.datasetName in ['COLLAB', 'IMDBBINARY'] and not args.surWeighted:
             # node degree as node feature
             adv_adj = torch.ones(size=(num_nodes, num_nodes)).int()
             sample.edge_index = utils.adj2idx(adv_adj).long()
-            sample.num_nodes = num_nodes
             sample.edge_attr = torch.rand(sample.edge_index.shape[1], )
             sample.edge_attr.requires_grad_()
+            # diminish edges with weights lower than 0.5
             bin_attr = (sample.edge_attr + 0.5).int().bool()
             bin_edge0 = sample.edge_index[0].masked_select(bin_attr)
             bin_edge1 = sample.edge_index[1].masked_select(bin_attr)
             sample.x = bin_edge0.bincount().float()
             cl_optim = torch.optim.Adam([sample.edge_attr], lr=0.1)
         else:
-            # pseudo-weighted graph generation
-            raise NotImplementedError
+            # pseudo-weighted graph generation for DD & PROTEINS
+            adv_adj = torch.ones(size=(num_nodes, num_nodes), device=args.device).bool()
+            sample.edge_index = geo.utils.remove_self_loops(
+                utils.adj2idx(adv_adj).long())[0]
+            sample.edge_attr = torch.rand(sample.edge_index.shape[1], ).to(args.device)
+            sample.x = utils.getNodes(num_nodes)
+            sample.edge_attr.requires_grad_()
+            cl_optim = torch.optim.Adam([sample.edge_attr], lr=0.1)
+
         cur_pred = victimModel(sample)
         cur_tar = random.uniform(0.55, 0.99)
         cnt = 0
