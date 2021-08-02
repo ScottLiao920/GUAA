@@ -87,13 +87,19 @@ class GCN(nn.Module):
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, data):
+        # TODO: add support for weighted graph
         x, edge_index, batch = data.x, data.edge_index, data.batch
+        try:
+            edge_weight = data.edge_attr
+        except AttributeError:
+            # no edge weight
+            edge_weight = None
         edge_index, _ = remove_self_loops(edge_index)
 
-        x_1 = torch.tanh(self.conv1(x, edge_index))
-        x_2 = torch.tanh(self.conv2(x_1, edge_index))
-        x_3 = torch.tanh(self.conv3(x_2, edge_index))
-        x_4 = torch.tanh(self.conv4(x_3, edge_index))
+        x_1 = torch.tanh(self.conv1(x, edge_index, edge_weight))
+        x_2 = torch.tanh(self.conv2(x_1, edge_index, edge_weight))
+        x_3 = torch.tanh(self.conv3(x_2, edge_index, edge_weight))
+        x_4 = torch.tanh(self.conv4(x_3, edge_index, edge_weight))
         x = torch.cat([x_1, x_2, x_3, x_4], dim=-1)
         x = global_sort_pool(x, batch, k=30)
         x = x.view(x.size(0), 1, x.size(-1))

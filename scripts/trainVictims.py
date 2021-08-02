@@ -29,7 +29,7 @@ parser.add_argument('--datasetName', type=str, default='IMDBB')
 
 def train(datasetName='IMDBB'):
     try:
-        assert datasetName in ['IMDBB', 'DD', 'COLLAB', 'PROTEINS']
+        assert datasetName in ['IMDB-BINARY', 'DD', 'COLLAB', 'PROTEINS']
         print(datasetName)
     except AssertionError:
         raise NotImplementedError(

@@ -14,7 +14,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch_geometric as geo
-from modules.models import HGPSL as Model
 from torch._C import device
 from torch.utils.data import random_split
 
@@ -25,11 +24,11 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # , 1, 2"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--datasetName', type=str, default='IMDBBINARY')
+parser.add_argument('--datasetName', type=str, default='PROTEINS')
 parser.add_argument('--surWeighted', type=bool, default=False)
 parser.add_argument('--surDataperClass', type=int, default=500)
 parser.add_argument('--maxStep', type=int, default=5000)
-parser.add_argument('--trained', type=bool, default=False)
+parser.add_argument('--trained', type=bool, default=True)
 parser.add_argument('--device', type=str, default="CUDA:0")
 args = parser.parse_args()
 
@@ -39,7 +38,7 @@ else:
     args.device = torch.device('cpu')
 print("Performing calculations on {}".format(args.device))
 
-if args.datasetName not in ['PROTEINS', 'IMDBBINARY', 'DD', 'COLLAB']:
+if args.datasetName not in ['PROTEINS', 'IMDB-BINARY', 'DD', 'COLLAB']:
     raise NotImplementedError(
         "Only PROTEINS, IMDB-Binary, DD and COLLAB dataset supported!")
 numNodes = 600
@@ -88,46 +87,49 @@ for cur_class in range(num_classes):
                     adv_adj[j, i] = adv_adj[i, j]  # make it symmetric
             sample.edge_index = utils.adj2idx(adv_adj).long()
             sample.x = utils.getNodes(
-                num_nodes, args.datasetName).to(args.device)  # TODO: Potential Bug
+                num_nodes, args.datasetName).to(args.device)
             sample.x.requires_grad_()
             cl_optim = torch.optim.Adam([sample.x], lr=0.1)
-        elif args.datasetName in ['COLLAB', 'IMDBBINARY'] and not args.surWeighted:
+        elif args.datasetName in ['COLLAB', 'IMDB-BINARY']:
             # node degree as node feature
             adv_adj = torch.ones(size=(num_nodes, num_nodes)).int()
             sample.edge_index = utils.adj2idx(adv_adj).long()
             sample.edge_attr = torch.rand(sample.edge_index.shape[1], )
             sample.edge_attr.requires_grad_()
+            print(sample.edge_attr.requires_grad)
             # diminish edges with weights lower than 0.5
             bin_attr = (sample.edge_attr + 0.5).int().bool()
             bin_edge0 = sample.edge_index[0].masked_select(bin_attr)
             bin_edge1 = sample.edge_index[1].masked_select(bin_attr)
-            sample.x = bin_edge0.bincount().float()
+            sample.x = torch.unsqueeze(bin_edge0.bincount().float(), 1)
             cl_optim = torch.optim.Adam([sample.edge_attr], lr=0.1)
         else:
             # pseudo-weighted graph generation for DD & PROTEINS
-            adv_adj = torch.ones(size=(num_nodes, num_nodes), device=args.device).bool()
+            adv_adj = torch.ones(size=(num_nodes, num_nodes),
+                                 device=args.device).bool()
             sample.edge_index = geo.utils.remove_self_loops(
                 utils.adj2idx(adv_adj).long())[0]
-            sample.edge_attr = torch.rand(sample.edge_index.shape[1], ).to(args.device)
-            sample.x = utils.getNodes(num_nodes)
+            sample.edge_attr = torch.rand(
+                sample.edge_index.shape[1], ).to(args.device)
+            sample.x = utils.getNodes(num_nodes, args.datasetName)
             sample.edge_attr.requires_grad_()
             cl_optim = torch.optim.Adam([sample.edge_attr], lr=0.1)
 
-        cur_pred = victimModel(sample)
+        cur_pred = victimModel(sample.to(args.device))
         cur_tar = random.uniform(0.55, 0.99)
         cnt = 0
         while F.softmax(cur_pred)[:, cur_class].item() < cur_tar and cnt < args.maxStep:
             cl_optim.zero_grad()
-            cur_pred = victimModel(sample)
+            cur_pred = victimModel(sample.to(args.device))
             loss = F.nll_loss(cur_pred, torch.Tensor(
                 [cur_class]).long().to(args.device))
             loss.backward()
             cl_optim.step()
             if cnt % 500 == 0:
-                if args.datasetName in ['PROTEINS', 'DD']:
-                    print(sample.x.grad.sum())
+                if args.datasetName in ['PROTEINS', 'DD'] and not args.surWeighted:
+                    print(sample.x.grad.sum().item())
                 else:
-                    print(sample.edge_attr.grad.sum())
+                    print(sample.edge_attr.grad.sum().item())
                 print('{} |　Epoch {} | Target Class {} | Current Logits for target class {}'.format(
                     idx, cnt, cur_class, F.softmax(cur_pred)[0, cur_class].item()))
             cnt += 1

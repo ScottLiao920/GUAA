@@ -163,7 +163,7 @@ def loadModel(datasetName):
     # updates: all using GCN model
     if datasetName == 'PROTEINS':
         num_classes = 2
-        num_features = 3
+        num_features = 4
     elif datasetName == 'DD':
         num_classes = 2
         num_features = 89
@@ -175,7 +175,7 @@ def loadModel(datasetName):
         num_features = 1
     model = GCN(num_features, num_classes)
     model.load_state_dict(torch.load(os.path.join(
-        'models'. datasetName, 'model.pt'
+        'models', datasetName, 'model.pt'
     )))
     return model
 
@@ -186,6 +186,9 @@ def getNodes(numNodes, datasetName):
         tmp = torch.cat((torch.randint(-500, 800, (numNodes, 1)),
                          torch.nn.functional.one_hot(torch.randint(0, 3, (numNodes,)), num_classes=3)),
                         dim=1)
+
+        # for Graph transformer, only one-hot-encoded category required
+        # tmp = torch.nn.functional.one_hot(torch.randint(0, 3, (numNodes,)), num_classes=3)
     else:
         # DD dataset, one-hot tensor of 89 labels
         tmp = torch.nn.functional.one_hot(
