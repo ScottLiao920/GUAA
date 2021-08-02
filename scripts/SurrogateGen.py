@@ -24,9 +24,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # , 1, 2"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--datasetName', type=str, default='PROTEINS')
-parser.add_argument('--surWeighted', type=bool, default=False)
-parser.add_argument('--surDataperClass', type=int, default=500)
+parser.add_argument('--datasetName', type=str, default='IMDB-BINARY')
+parser.add_argument('--surWeighted', type=bool, default=True)
+parser.add_argument('--surDataperClass', type=int, default=1)
 parser.add_argument('--maxStep', type=int, default=5000)
 parser.add_argument('--trained', type=bool, default=True)
 parser.add_argument('--device', type=str, default="CUDA:0")
@@ -70,7 +70,6 @@ for cur_class in range(num_classes):
         sample = geo.data.Batch()
         sample.num_nodes = num_nodes
 
-        # TODO: modify for every dataset
         if args.datasetName in ['PROTEINS', 'DD'] and not args.surWeighted:
             # not using node degree as node feature
             adv_adj = torch.zeros(
@@ -141,9 +140,23 @@ for cur_class in range(num_classes):
                     torch.exp(sample.x, out=sample.x)
                     summed = torch.sum(sample.x, dim=1, keepdim=True)
                     sample.x /= summed
-        # TODO: modify generated surrogate data to one-hot or keep them in softmax-ed manner?
-        torch.save(sample, os.path.join(
-            'data', args.datasetName, 'classImpression', str(cur_class), '{}.pt'.format(idx))
-        )
+        # ? modify generated surrogate data to one-hot or keep them in softmax-ed manner?
+        try:
+            torch.save(sample, os.path.join(
+                'data', args.datasetName, 'classImpression', str(cur_class), '{}.pt'.format(idx))
+            )
+        except FileNotFoundError:
+            # no directory created yet
+            try:
+                os.mkdir(os.path.join(
+                    'data', args.datasetName, 'classImpression', str(cur_class)))
+            except FileNotFoundError:
+                os.mkdir(os.path.join(
+                    'data', args.datasetName, 'classImpression'))
+                os.mkdir(os.path.join(
+                    'data', args.datasetName, 'classImpression', str(cur_class)))
+            torch.save(sample, os.path.join(
+                'data', args.datasetName, 'classImpression', str(cur_class), '{}.pt'.format(idx))
+            )
         print('Epoch {} | Target Class {} | Current Logits for target class {}'.format(
             cnt, cur_class, F.softmax(cur_pred)[0, cur_class].item()))
