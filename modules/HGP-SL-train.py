@@ -8,7 +8,7 @@ import pickle
 
 import torch
 import torch.nn.functional as F
-from models import Model
+from models import HGPSL as Model
 from torch.utils.data import random_split
 from torch_geometric.data import DataLoader
 from torch_geometric.datasets import TUDataset

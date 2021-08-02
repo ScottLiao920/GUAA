@@ -16,7 +16,7 @@ from modules.layers import GCN, HGPSLPool
 
 class HGPSL(torch.nn.Module):
     def __init__(self, args):
-        super(Model, self).__init__()
+        super(HGPSL, self).__init__()
         self.args = args
         self.num_features = args.num_features
         self.nhid = args.nhid
