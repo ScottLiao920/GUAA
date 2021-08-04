@@ -43,7 +43,9 @@ num_val = int(len(dataset) * 0.1)
 num_test = len(dataset) - (num_training + num_val)
 training_set, validation_set, test_set = random_split(
     dataset, [num_training, num_val, num_test])
-victimModel = utils.loadModel(args.datasetName)
+
+# now need graph embedding outcome for comparison
+victimModel = utils.loadModel(args.datasetName, outpEmbed=True)
 posModes = [['deg', 'min', 'eig', 'btw']
             if args.posMode == 'all' else [args.posMode]]
 
@@ -96,23 +98,19 @@ for triggerLen in range(1, 4):
             modi_graph = utils.BatchAppend([cldataList[i]
                                             for i in cur_batch], trigger)
             modi_graph.x.requires_grad_()
-            embed_adv = victimModel(modi_graph)
+            advOutput, embedAdv = victimModel(modi_graph)
 
             ori_graph = geo.data.Batch.from_data_list(
                 [cldataList[i] for i in cur_batch]).to(args.device)
             ori_graph.x.requires_grad_()
-
-            embed_ori = victimModel(ori_graph)
-
             labels = geo.data.Batch.from_data_list(
                 [cldataList[i] for i in cur_batch]).y
 
-            output = victimModel(embed_adv)
             loss = F.nll_loss(output, labels)
             grad_embed_adv = torch.autograd.grad(
                 loss, modi_graph.x)  # , allow_unused=True)
 
-            output = victimModel(embed_ori)
+            output, embed_ori = victimModel(ori_graph)
             loss = F.nll_loss(output, labels)
             grad_embed_ori = torch.autograd.grad(
                 loss, ori_graph.x)  # , allow_unused=True)
@@ -129,8 +127,7 @@ for triggerLen in range(1, 4):
         trigger = utils.getTrigger(
             n=triggerLen, idx=trigger_idx, weighted=True)
         modi_graph = utils.BatchAppend(test_set, trigger, posMode)
-        # ! embed_adv = victimModel(modi_graph)
-        # ! output = (embed_adv)
+        output, embed_adv = victimModel(modi_graph)
         accu = (output.argmax(-1) == geo.data.Batch.from_data_list(
             test_set).y).int().sum().item() / len(test_set)
         log['trigger_idx'] = trigger_idx
