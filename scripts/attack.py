@@ -38,6 +38,11 @@ args = parser.parse_args()
 transform = utils.Indegree() if args.datasetName in [
     'IMDB-BINARY', 'COLLAB'] else None
 dataset = utils.getDataset(args.dataRoot, args.datasetName, transform)
+num_training = int(len(dataset) * 0.8)
+num_val = int(len(dataset) * 0.1)
+num_test = len(dataset) - (num_training + num_val)
+training_set, validation_set, test_set = random_split(
+    dataset, [num_training, num_val, num_test])
 victimModel = utils.loadModel(args.datasetName)
 posModes = [['deg', 'min', 'eig', 'btw']
             if args.posMode == 'all' else [args.posMode]]
@@ -115,8 +120,10 @@ for triggerLen in range(1, 4):
             for i in range(len(trigger_idx)):
                 cur_score = torch.ones((len(triggerList, )))
                 for triggerCand in range(len(triggerList)):
-                    cur_score[triggerCand] = torch.matmul((triggerList[triggerCand].x - modi_graph.x[-(triggerLen-i)]).mean(dim=0).unsqueeze(0),
-                                                          (grad_embed_adv[0][-(triggerLen-i)]).unsqueeze(-1)).item()
+                    cur_score[triggerCand] = torch.matmul((
+                        triggerList[triggerCand].x -
+                        modi_graph.x[-(triggerLen-i)]).mean(dim=0).unsqueeze(0),
+                        (grad_embed_adv[0][-(triggerLen-i)]).unsqueeze(-1)).item()
                 trigger_idx[i] = cur_score.argmin(-1).item()
         time_used = time.time() - start
         trigger = utils.getTrigger(
