@@ -144,7 +144,7 @@ def BatchAppend(ori_graphs, trigger, pos_mode='deg'):
     return modi_graphs
 
 
-def loadModel(datasetName):
+def loadModel(datasetName, outpEmbed=False):
     # unsupervised graph transformer models includes Cython modules, unpickle-able
     # Load model class for unsupervised graph transformer models first then load state
 
@@ -173,7 +173,7 @@ def loadModel(datasetName):
     elif datasetName == 'IMDB-BINARY':
         num_classes = 2
         num_features = 1
-    model = GCN(num_features, num_classes)
+    model = GCN(num_features, num_classes, outpEmbed)
     model.load_state_dict(torch.load(os.path.join(
         'models', datasetName, 'model.pt'
     )))
