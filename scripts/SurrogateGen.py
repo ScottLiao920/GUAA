@@ -25,7 +25,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # , 1, 2"
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--datasetName', type=str, default='IMDB-BINARY')
+parser.add_argument('--datasetName', type=str, default='IMDB-BINARY', choices=['IMDB-BINARY', 'DD', 'COLLAB', 'PROTEINS'])
 parser.add_argument('--surWeighted', type=bool, default=True)
 parser.add_argument('--surDataperClass', type=int, default=1)
 parser.add_argument('--maxStep', type=int, default=5000)

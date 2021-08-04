@@ -1,6 +1,6 @@
 import os
 import pickle
-
+import random
 import networkx
 import torch
 import torch_geometric as geo
@@ -194,6 +194,51 @@ def getNodes(numNodes, datasetName):
         tmp = torch.nn.functional.one_hot(
             torch.randint(0, 89, (numNodes, )), num_classes=89)
     return tmp.float().clone()
+
+
+def getCands(n, cands, idx=None):
+    # get n nodes based on candidate set, idx is the index of node feature
+    if not idx:
+        idxs = random.choices(list(range(len(list(cands.keys())))), k=n)
+    else:
+        idxs = idx
+    dataList = []
+    for i in idxs:
+        vandewallF, encoded = list(cands.keys())[i].split()
+        dataList.append(torch.cat((torch.as_tensor([float(vandewallF)]).long(),
+                                   F.one_hot(torch.as_tensor([int(encoded)]).long(),
+                                   num_classes=3).squeeze())).unsqueeze(0))
+    return torch.cat(dataList, dim=0).float().clone()
+
+
+def getTrigger(n, cands, idx=None, weighted=False):
+    # idx is the list of required indecies
+    if idx:
+        assert n == len(idx)
+    trigger = geo.data.Data()
+    trigger.x = getCands(n, cands, idx)
+    adv_adj = torch.zeros(size=(n, n)).bool()
+    for i in range(n):
+        adv_adj[i, i:].random_(0, 2)
+    adv_adj = adv_adj.int()
+    for i in range(n):
+        for j in range(i, n):
+            adv_adj[j, i] = adv_adj[i, j]
+    if n > 1:
+        try:
+            trigger.edge_index, _ = geo.utils.remove_self_loops(
+                adj2idx(adv_adj).long())
+        except RuntimeError:
+            # in case of no edge generated
+            return getTrigger(n, idx, weighted)
+        if geo.utils.contains_isolated_nodes(trigger.edge_index, num_nodes=n):
+            return getTrigger(n, idx, weighted)
+        else:
+            if weighted:
+                trigger.edge_attr = torch.ones((trigger.edge_index.shape[1], ))
+            return trigger
+    else:
+        return trigger
 
 
 # function to transfer a torch geometric dataset to graph transformer readable data

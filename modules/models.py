@@ -71,7 +71,7 @@ class HGPSL(torch.nn.Module):
 
 
 class GCN(nn.Module):
-    def __init__(self, num_features, num_classes):
+    def __init__(self, num_features, num_classes, outpEmbed=False):
         super(GCN, self).__init__()
 
         self.conv1 = GCNConv(num_features, 32)
@@ -85,6 +85,7 @@ class GCN(nn.Module):
         self.drop_out = Dropout(0.5)
         self.classifier_2 = Linear(128, num_classes)
         self.relu = nn.ReLU(inplace=True)
+        self.outpEmbed = outpEmbed
 
     def forward(self, data):
         # TODO: add support for weighted graph
@@ -110,5 +111,4 @@ class GCN(nn.Module):
         out = self.relu(self.classifier_1(x))
         out = self.drop_out(out)
         classes = F.log_softmax(self.classifier_2(out), dim=-1)
-
-        return classes
+        return [classes, x] if self.outpEmbed else classes
